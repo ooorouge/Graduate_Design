@@ -15,6 +15,6 @@ import math
     ALL in this source file
 '''
 scale = 25
-deadtime_deg = 4
+deadtime_deg = 5
 deadtime_arc = deadtime_deg * math.pi / 180
 buoyant_for_test = 10 * math.pi / 180
