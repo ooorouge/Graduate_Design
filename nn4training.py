@@ -14,6 +14,7 @@ ops.reset_default_graph()
 
 # Create graph session
 sess = tf.Session()
+#saver = tf.train.Saver()
 
 # set batch size for training
 batch_size = 50
@@ -32,19 +33,45 @@ y_vals_train = y_vals_squeeze[train_indices]
 y_vals_test = y_vals_squeeze[test_indices]
 
 # Define Variable Functions (weights and bias)
-def init_weight(shape, st_dev):
-    weight = tf.Variable(tf.random_normal(shape, stddev=st_dev))
+def init_weight(shape, st_dev, name):
+    weight = tf.Variable(tf.random_normal(shape, stddev=st_dev), name=name)
     return weight
 
 
-def init_bias(shape, st_dev):
-    bias = tf.Variable(tf.random_normal(shape, stddev=st_dev))
+def init_bias(shape, st_dev, name):
+    bias = tf.Variable(tf.random_normal(shape, stddev=st_dev), name=name)
     return bias
 
 # Create Placeholders
 x_data = tf.placeholder(shape=[None, 42], dtype=tf.float32)
 y_target = tf.placeholder(shape=[None, 1], dtype=tf.float32)
 
+# Convolution layer:
+def conv_layer_1d(input_1d, input_filter, stride):
+    """
+    :param input_1d: 1D input array.
+    :param input_filter: Filter to convolve across the input_1d array.
+    :param stride: stride for filter.
+    :return: array.
+    """
+    input_2d = tf.expand_dims(input_1d, 0)
+    input_3d = tf.expand_dims(input_2d, 0)
+    input_4d = tf.expand_dims(input_3d, 3)
+
+    convolution_output = tf.nn.conv2d(input_4d,
+                                      filter=input_filter,
+                                      strides=[1, 1, stride, 1],
+                                      padding="VALID")
+    # Get rid of extra dimensions
+    conv_output_1d = tf.squeeze(convolution_output)
+    return conv_output_1d
+
+# Create filter for convolution.
+conv_size = 5
+stride_size = 1
+my_filter = tf.Variable(tf.random_normal(shape=[1, conv_size, 1, 1]), name='var_conv')
+# Create convolution layer
+#TODO
 
 # Create a fully connected layer:
 def fully_connected(input_layer, weights, biases):
@@ -52,20 +79,20 @@ def fully_connected(input_layer, weights, biases):
     return tf.nn.sigmoid(layer)
 
 # -------Create the first layer (50 hidden nodes)--------
-weight_1 = init_weight(shape=[42, 25], st_dev=10.0)
-bias_1 = init_bias(shape=[25], st_dev=10.0)
+weight_1 = init_weight(shape=[42, 25], st_dev=10.0, name='w1')
+bias_1 = init_bias(shape=[25], st_dev=10.0, name='b1')
 layer_1 = fully_connected(x_data, weight_1, bias_1)
 
 
 # -------Create second layer (25 hidden nodes)--------
-weight_2 = init_weight(shape=[25, 10], st_dev=10.0)
-bias_2 = init_bias(shape=[10], st_dev=10.0)
+weight_2 = init_weight(shape=[25, 10], st_dev=10.0, name='w2')
+bias_2 = init_bias(shape=[10], st_dev=10.0, name='b2')
 layer_2 = fully_connected(layer_1, weight_2, bias_2)
 
 
 # -------Create third layer (5 hidden nodes)--------
-weight_3 = init_weight(shape=[10, 3], st_dev=10.0)
-bias_3 = init_bias(shape=[3], st_dev=10.0)
+weight_3 = init_weight(shape=[10, 3], st_dev=10.0, name='w3')
+bias_3 = init_bias(shape=[3], st_dev=10.0, name='b3')
 layer_3 = fully_connected(layer_2, weight_3, bias_3)
 
 
@@ -75,11 +102,11 @@ def ActivationLayer(input):
 layer_activation_output = ActivationLayer(layer_3)
 
 # -------Create output layer (1 output value)--------
-weight_4 = init_weight(shape=[3, 1], st_dev=10.0)
-bias_4 = init_bias(shape=[1], st_dev=10.0)
+weight_4 = init_weight(shape=[3, 1], st_dev=10.0, name='w4')
+bias_4 = init_bias(shape=[1], st_dev=10.0, name='b4')
 final_output = fully_connected(layer_activation_output, weight_4, bias_4)
 
-# Declare loss function (L1)
+# Declare loss function (L2)
 loss = tf.reduce_mean((y_target - final_output)**2)
 
 # Declare optimizer
@@ -89,6 +116,7 @@ train_step = my_opt.minimize(loss)
 # Initialize Variables
 init = tf.global_variables_initializer()
 sess.run(init)
+#saver.restore(sess, 'model_1_17')
 
 # Training loop
 loss_vec = []
@@ -113,15 +141,16 @@ test_actuals = actuals[test_indices]
 train_actuals = actuals[train_indices]
 test_preds = [x[0] for x in sess.run(final_output, feed_dict={x_data: x_vals_test})]
 train_preds = [x[0] for x in sess.run(final_output, feed_dict={x_data: x_vals_train})]
+#saver.save(sess, 'model_1_17')
 
 ## Results output for visualization
 #ResultsOutput(test_preds, test_actuals)
 
-#test_preds = np.array([0.0 if x < 0.7 else 1.0 for x in test_preds])
-#train_preds = np.array([0.0 if x < 0.7 else 1.0 for x in train_preds])
+test_preds = np.array([0.0 if x < 0.7 else 1.0 for x in test_preds])
+train_preds = np.array([0.0 if x < 0.7 else 1.0 for x in train_preds])
 #
-#merged = tf.summary.merge_all() #将图形、训练过程等数据合并在一起
-#writer = tf.summary.FileWriter('logs',sess.graph) #将训练日志写入到logs文件夹下
+merged = tf.summary.merge_all() #将图形、训练过程等数据合并在一起
+writer = tf.summary.FileWriter('logs',sess.graph) #将训练日志写入到logs文件夹下
 #
 ## Print out accuracies
 #test_acc = np.mean([x == y for x, y in zip(test_preds, test_actuals)])
