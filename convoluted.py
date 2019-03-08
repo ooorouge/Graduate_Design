@@ -84,6 +84,24 @@ def max_pool(input_1d, width, stride):
 
 my_maxpool_output = max_pool(my_activation_output, width=maxpool_size, stride=stride_size)
 
+# --------Max Pool--------
+def avg_pool(input_1d, width, stride):
+    """
+    :param input_1d: Input array to perform max-pool on.
+    :param width: Width of 1d-window for max-pool
+    :param stride: Stride of window across input array
+    :return: max-pooled array
+    """
+    input_2d = tf.expand_dims(input_1d, 0)
+    input_3d = tf.expand_dims(input_2d, 0)
+    input_4d = tf.expand_dims(input_3d, 3)
+
+    pool_output = tf.nn.avg_pool(input_4d, ksize=[1, 1, width, 1],
+                                 strides=[1, 1, stride, 1],
+                                 padding='VALID')
+    # Get rid of extra dimensions
+    pool_output_1d = tf.squeeze(pool_output)
+    return pool_output_1d
 
 # --------Fully Connected--------
 def fully_connected(input_layer, num_outputs):
