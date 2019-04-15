@@ -1,0 +1,15 @@
+*.py
+!All_in_1.py
+!MLP.py
+!TEST.py
+!TEST2.py
+
+*.csv
+*.xlsx
+!dataset_one_hot.csv
+.idea
+.vs
+.vscode
+__pycache__
+logs
+venv
