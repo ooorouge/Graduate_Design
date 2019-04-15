@@ -187,6 +187,5 @@ def main(_):
     plt.show()
 
 
-
 if __name__ == '__main__':
     tf.app.run()
